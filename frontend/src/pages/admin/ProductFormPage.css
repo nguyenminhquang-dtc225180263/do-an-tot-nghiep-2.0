@@ -1,0 +1,15 @@
+.product-form-page { width: 100%; max-width: 1180px; min-width: 0; }
+.pf-section { max-width: 100%; overflow: hidden; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-md); box-sizing: border-box; }
+.pf-section h2 { font-size: var(--font-md); font-weight: 600; margin-bottom: var(--space-md); }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-md); }
+.pf-grid > *, .pf-variant > *, .product-form-page .input-group { min-width: 0; }
+.product-form-page .input-group input, .product-form-page .input-group select, .product-form-page .input-group textarea { width: 100%; max-width: 100%; box-sizing: border-box; }
+.pf-variant { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: var(--space-sm); align-items: end; padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border); }
+.pf-variant:last-child { border: none; }
+.pf-variant-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; justify-content: flex-start; }
+.pf-variant-image { color: var(--color-text-muted); font-size: var(--font-sm); }
+
+@media (max-width: 520px) {
+  .pf-section { padding: var(--space-md); }
+  .pf-grid, .pf-variant { grid-template-columns: 1fr; }
+}
