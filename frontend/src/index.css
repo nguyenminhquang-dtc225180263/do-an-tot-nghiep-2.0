@@ -3,26 +3,29 @@
 /* ─── Design System: CSS Custom Properties ─── */
 :root {
   /* Colors */
-  --color-primary: #E8A87C;
-  --color-primary-hover: #D4956A;
-  --color-primary-light: rgba(232, 168, 124, 0.15);
-  --color-bg: #0F0F0F;
-  --color-surface: #1A1A1A;
-  --color-surface-hover: #242424;
-  --color-surface-2: #1E1E1E;
-  --color-border: #2A2A2A;
-  --color-border-light: #333333;
-  --color-text: #F5F5F5;
-  --color-text-secondary: #CCCCCC;
-  --color-text-muted: #999999;
-  --color-success: #4CAF50;
-  --color-success-bg: rgba(76, 175, 80, 0.12);
-  --color-danger: #EF5350;
-  --color-danger-bg: rgba(239, 83, 80, 0.12);
-  --color-warning: #FFA726;
-  --color-warning-bg: rgba(255, 167, 38, 0.12);
-  --color-info: #42A5F5;
-  --color-info-bg: rgba(66, 165, 245, 0.12);
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-light: #EFF6FF;
+  --color-primary-soft: #DBEAFE;
+  --color-primary-border: #BFDBFE;
+  --color-primary-contrast: #1E3A8A;
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F1F5F9;
+  --color-surface-2: #F8FAFC;
+  --color-border: #E2E8F0;
+  --color-border-light: #CBD5E1;
+  --color-text: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-success: #15803D;
+  --color-success-bg: #DCFCE7;
+  --color-danger: #B91C1C;
+  --color-danger-bg: #FEE2E2;
+  --color-warning: #B45309;
+  --color-warning-bg: #FEF3C7;
+  --color-info: #1D4ED8;
+  --color-info-bg: #DBEAFE;
 
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -52,9 +55,9 @@
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 18px 40px rgba(15, 23, 42, 0.14);
 
   /* Transitions */
   --transition-fast: 150ms ease;

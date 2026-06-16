@@ -46,7 +46,7 @@ export default function ProductManagePage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p._id}>
-                  <td><img src={p.images?.[0] || 'https://placehold.co/40x50/1a1a1a/999?text=N'} alt="" style={{ width: 40, height: 50, objectFit: 'cover', borderRadius: 4 }} /></td>
+                  <td><img src={p.images?.[0] || 'https://placehold.co/40x50/f8fafc/64748b?text=N'} alt="" style={{ width: 40, height: 50, objectFit: 'cover', borderRadius: 4 }} /></td>
                   <td>{p.name}</td>
                   <td>{p.categoryId?.name || '—'}</td>
                   <td><Badge status={p.status}>{p.status}</Badge></td>

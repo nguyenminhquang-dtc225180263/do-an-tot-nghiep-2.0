@@ -5,7 +5,7 @@ const formatPrice = (p) => new Intl.NumberFormat('vi-VN', { style: 'currency', c
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
-  const thumb = product.images?.[0] || 'https://placehold.co/300x400/1a1a1a/999?text=No+Image';
+  const thumb = product.images?.[0] || 'https://placehold.co/300x400/f8fafc/64748b?text=No+Image';
   const minPrice = product.minPrice ?? product.variants?.[0]?.price;
 
   return (
