@@ -1,9 +1,31 @@
 const slugify = require('slugify');
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const ProductVariant = require('../models/ProductVariant');
 const ApiError = require('../utils/ApiError');
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizeSearchInput = (search) => {
+  if (typeof search !== 'string') return '';
+  return search.trim().replace(/\s+/g, ' ');
+};
+
+const buildSearchFilter = (search) => {
+  const keyword = normalizeSearchInput(search);
+  if (!keyword) return null;
+
+  const keywordRegex = new RegExp(escapeRegExp(keyword), 'i');
+
+  return {
+    $or: [{ name: keywordRegex }, { description: keywordRegex }],
+  };
+};
+
+const normalizeObjectId = (value) => {
+  if (!value || !mongoose.Types.ObjectId.isValid(value)) return value;
+  return new mongoose.Types.ObjectId(value);
+};
 
 const buildSlug = (value) => slugify(value, { lower: true, strict: true });
 
@@ -55,12 +77,13 @@ const getProducts = async (query) => {
     filter.status = 'active';
   }
 
-  if (categoryId) filter.categoryId = categoryId;
+  if (categoryId) filter.categoryId = normalizeObjectId(categoryId);
   if (targetGender) filter.targetGender = targetGender;
 
-  // Text search
-  if (search) {
-    filter.$text = { $search: search };
+  // Search exact phrase in public product fields instead of broad $text OR matching.
+  const searchFilter = buildSearchFilter(search);
+  if (searchFilter) {
+    Object.assign(filter, searchFilter);
   }
 
   // Sort options
