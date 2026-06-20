@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
 import { adminService } from '../../services/adminService';
@@ -9,23 +9,28 @@ import Pagination from '../../components/ui/Pagination';
 import Spinner from '../../components/ui/Spinner';
 import './AdminTable.css';
 
-const fmt = (p) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
-
 export default function ProductManagePage() {
   const navigate = useNavigate();
   const toast = useToast();
   const [products, setProducts] = useState([]);
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
-    productService.getProducts({ page, limit: 15 })
+    const params = { page, limit: 15, status: 'all' };
+    if (search.trim()) params.search = search.trim();
+    productService.getProducts(params)
       .then((data) => { setProducts(data.products || []); setPagination(data.pagination || {}); })
       .finally(() => setLoading(false));
-  };
-  useEffect(load, [page]);
+  }, [page, search]);
+
+  useEffect(() => {
+    const timer = setTimeout(load, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const handleDelete = async (id) => {
     if (!confirm('Xóa sản phẩm này?')) return;
@@ -38,6 +43,15 @@ export default function ProductManagePage() {
       <div className="admin-table-header">
         <h1 className="page-title" style={{ marginBottom: 0 }}>Quản lý sản phẩm</h1>
         <Button onClick={() => navigate('/admin/products/new')}>+ Thêm sản phẩm</Button>
+      </div>
+      <div className="admin-filters">
+        <input
+          className="admin-search-input"
+          type="search"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Tìm kiếm sản phẩm..."
+        />
       </div>
       {loading ? <div className="page-loading"><Spinner /></div> : (
         <>

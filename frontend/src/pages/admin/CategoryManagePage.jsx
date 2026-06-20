@@ -13,9 +13,22 @@ export default function CategoryManagePage() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [name, setName] = useState('');
+  const [search, setSearch] = useState('');
 
   const load = () => { import('../../services/categoryService').then(m => m.categoryService.getCategories().then(setCategories)); };
   useEffect(load, []);
+
+  const searchText = search.trim().toLowerCase();
+  const filteredCategories = searchText
+    ? categories.filter((c) => [
+      c._id,
+      c.name,
+      c.slug,
+      c.isActive ? 'active' : 'inactive',
+      c.createdAt,
+      c.updatedAt,
+    ].some((value) => String(value || '').toLowerCase().includes(searchText)))
+    : categories;
 
   const handleSave = async () => {
     try {
@@ -36,10 +49,19 @@ export default function CategoryManagePage() {
         <h1 className="page-title" style={{ marginBottom: 0 }}>Quản lý danh mục</h1>
         <Button onClick={() => { setEditId(null); setName(''); setShowModal(true); }}>+ Thêm danh mục</Button>
       </div>
+      <div className="admin-filters">
+        <input
+          className="admin-search-input"
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Tìm kiếm danh mục..."
+        />
+      </div>
       <table className="admin-table">
         <thead><tr><th>Tên</th><th>Slug</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
         <tbody>
-          {categories.map((c) => (
+          {filteredCategories.map((c) => (
             <tr key={c._id}>
               <td>{c.name}</td>
               <td style={{ color: 'var(--color-text-muted)' }}>{c.slug}</td>

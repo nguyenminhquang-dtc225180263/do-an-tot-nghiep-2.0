@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { adminService } from '../../services/adminService';
 import { useToast } from '../../components/ui/Toast';
 import Badge from '../../components/ui/Badge';
@@ -16,18 +16,23 @@ export default function OrderManagePage() {
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     const params = { page, limit: 15 };
     if (filterStatus) params.orderStatus = filterStatus;
+    if (search.trim()) params.search = search.trim();
     adminService.getAllOrders(params)
       .then((data) => { setOrders(data.orders); setPagination(data.pagination); })
       .finally(() => setLoading(false));
-  };
+  }, [page, filterStatus, search]);
 
-  useEffect(load, [page, filterStatus]);
+  useEffect(() => {
+    const timer = setTimeout(load, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const handleStatus = async (id, status) => {
     try { await adminService.updateOrderStatus(id, status); toast(`Đã chuyển sang ${status}`); load(); }
@@ -43,6 +48,13 @@ export default function OrderManagePage() {
     <div className="admin-table-page">
       <h1 className="page-title">Quản lý đơn hàng</h1>
       <div className="admin-filters">
+        <input
+          className="admin-search-input"
+          type="search"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Tìm kiếm đơn hàng..."
+        />
         <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}>
           <option value="">Tất cả trạng thái</option>
           {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}

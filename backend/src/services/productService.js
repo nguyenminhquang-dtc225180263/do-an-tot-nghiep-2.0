@@ -2,6 +2,7 @@ const slugify = require('slugify');
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const ProductVariant = require('../models/ProductVariant');
+const Category = require('../models/Category');
 const ApiError = require('../utils/ApiError');
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -11,14 +12,36 @@ const normalizeSearchInput = (search) => {
   return search.trim().replace(/\s+/g, ' ');
 };
 
-const buildSearchFilter = (search) => {
+const buildSearchFilter = async (search) => {
   const keyword = normalizeSearchInput(search);
   if (!keyword) return null;
 
   const keywordRegex = new RegExp(escapeRegExp(keyword), 'i');
+  const conditions = [
+    { name: keywordRegex },
+    { slug: keywordRegex },
+    { description: keywordRegex },
+    { brand: keywordRegex },
+    { targetGender: keywordRegex },
+    { status: keywordRegex },
+    { images: keywordRegex },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(keyword)) {
+    const objectId = new mongoose.Types.ObjectId(keyword);
+    conditions.push({ _id: objectId }, { categoryId: objectId });
+  }
+
+  const categoryIds = await Category.find({
+    $or: [{ name: keywordRegex }, { slug: keywordRegex }],
+  }).distinct('_id');
+
+  if (categoryIds.length > 0) {
+    conditions.push({ categoryId: { $in: categoryIds } });
+  }
 
   return {
-    $or: [{ name: keywordRegex }, { description: keywordRegex }],
+    $or: conditions,
   };
 };
 
@@ -71,9 +94,9 @@ const getProducts = async (query) => {
   const filter = { isDeleted: false };
 
   // Public mặc định chỉ hiện active
-  if (status) {
+  if (status && status !== 'all') {
     filter.status = status;
-  } else {
+  } else if (!status) {
     filter.status = 'active';
   }
 
@@ -81,7 +104,7 @@ const getProducts = async (query) => {
   if (targetGender) filter.targetGender = targetGender;
 
   // Search exact phrase in public product fields instead of broad $text OR matching.
-  const searchFilter = buildSearchFilter(search);
+  const searchFilter = await buildSearchFilter(search);
   if (searchFilter) {
     Object.assign(filter, searchFilter);
   }

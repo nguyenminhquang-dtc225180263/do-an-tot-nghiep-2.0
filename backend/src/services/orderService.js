@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Address = require('../models/Address');
@@ -13,6 +14,55 @@ const VALID_TRANSITIONS = {
   shipping: ['delivered'],
   delivered: [],
   cancelled: [],
+};
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizeSearchInput = (search) => {
+  if (typeof search !== 'string') return '';
+  return search.trim().replace(/\s+/g, ' ');
+};
+
+const buildOrderSearchMatch = (search) => {
+  const keyword = normalizeSearchInput(search);
+  if (!keyword) return null;
+
+  const keywordRegex = new RegExp(escapeRegExp(keyword), 'i');
+  const conditions = [
+    { orderIdText: keywordRegex },
+    { totalAmountText: keywordRegex },
+    { paymentMethod: keywordRegex },
+    { paymentStatus: keywordRegex },
+    { orderStatus: keywordRegex },
+    { createdAtText: keywordRegex },
+    { createdAtTextVi: keywordRegex },
+    { 'shippingAddress.fullName': keywordRegex },
+    { 'shippingAddress.phone': keywordRegex },
+    { 'shippingAddress.street': keywordRegex },
+    { 'shippingAddress.ward': keywordRegex },
+    { 'shippingAddress.district': keywordRegex },
+    { 'shippingAddress.cityProvince': keywordRegex },
+    { 'shippingAddress.note': keywordRegex },
+    { 'items.productName': keywordRegex },
+    { 'items.sku': keywordRegex },
+    { 'items.size': keywordRegex },
+    { 'items.color': keywordRegex },
+    { 'user.fullName': keywordRegex },
+    { 'user.email': keywordRegex },
+    { 'user.phone': keywordRegex },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(keyword)) {
+    const objectId = new mongoose.Types.ObjectId(keyword);
+    conditions.push(
+      { _id: objectId },
+      { userId: objectId },
+      { 'items.productId': objectId },
+      { 'items.variantId': objectId }
+    );
+  }
+
+  return { $or: conditions };
 };
 
 /**
@@ -197,22 +247,74 @@ const cancelOrder = async (userId, orderId) => {
 /**
  * Danh sách tất cả đơn hàng (Admin) — filter, pagination
  */
-const getAllOrders = async ({ page = 1, limit = 10, orderStatus, paymentStatus }) => {
-  page = parseInt(page);
-  limit = parseInt(limit);
+const getAllOrders = async ({ page = 1, limit = 10, orderStatus, paymentStatus, search } = {}) => {
+  page = Math.max(parseInt(page, 10) || 1, 1);
+  limit = Math.max(parseInt(limit, 10) || 10, 1);
+  const skip = (page - 1) * limit;
 
   const filter = {};
   if (orderStatus) filter.orderStatus = orderStatus;
   if (paymentStatus) filter.paymentStatus = paymentStatus;
+  const searchMatch = buildOrderSearchMatch(search);
 
-  const [orders, total] = await Promise.all([
-    Order.find(filter)
-      .populate('userId', 'fullName email')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit),
-    Order.countDocuments(filter),
-  ]);
+  const pipeline = [
+    { $match: filter },
+    {
+      $lookup: {
+        from: 'users',
+        let: { uid: '$userId' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$uid'] } } },
+          { $project: { fullName: 1, email: 1, phone: 1 } },
+        ],
+        as: 'user',
+      },
+    },
+    { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        orderIdText: { $toString: '$_id' },
+        totalAmountText: { $toString: '$totalAmount' },
+        createdAtText: {
+          $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: '+07:00' },
+        },
+        createdAtTextVi: {
+          $dateToString: { format: '%d/%m/%Y', date: '$createdAt', timezone: '+07:00' },
+        },
+      },
+    },
+  ];
+
+  if (searchMatch) {
+    pipeline.push({ $match: searchMatch });
+  }
+
+  pipeline.push(
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+          { $addFields: { userId: { $ifNull: ['$user', '$userId'] } } },
+          {
+            $project: {
+              user: 0,
+              orderIdText: 0,
+              totalAmountText: 0,
+              createdAtText: 0,
+              createdAtTextVi: 0,
+            },
+          },
+        ],
+        total: [{ $count: 'count' }],
+      },
+    }
+  );
+
+  const [result] = await Order.aggregate(pipeline);
+  const orders = result?.data || [];
+  const total = result?.total?.[0]?.count || 0;
 
   return {
     orders,
